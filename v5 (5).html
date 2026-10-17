@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time & Work Master v5</title>
+    <style>
+        /* Sleek Grey/Black Dark Theme */
+        :root {
+            --bg: #09090b;          
+            --surface: #18181b;     
+            --surface-hover: #27272a; 
+            --primary: #3b82f6;     /* Blue accent for Time & Work */
+            --primary-hover: #2563eb;
+            --success: #10b981;     
+            --danger: #f43f5e;      
+            --warning: #f59e0b;     
+            --text: #fafafa;        
+            --text-muted: #a1a1aa;  
+            --border: #27272a;      
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 1rem; 
+        }
+        
+        .container { 
+            background: var(--surface); 
+            border-radius: 12px; 
+            padding: 2.5rem; 
+            width: 100%; 
+            max-width: 900px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); 
+            border: 1px solid var(--border); 
+        }
+        
+        h1 { 
+            text-align: center; 
+            margin-bottom: 0.5rem; 
+            color: var(--text); 
+            font-size: 2.2rem; 
+            letter-spacing: -0.5px;
+        }
+        
+        p.subtitle { 
+            text-align: center; 
+            color: var(--text-muted); 
+            margin-bottom: 2.5rem; 
+            font-size: 1rem; 
+        }
+        
+        #start-screen, #quiz-screen, #result-screen { display: none; }
+        #start-screen.active, #quiz-screen.active, #result-screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        button { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 0.875rem 1.5rem; 
+            border-radius: 8px; 
+            font-size: 1.05rem; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            font-weight: 600; 
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+        
+        button:hover:not(:disabled) { 
+            background: var(--primary-hover); 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+        }
+        
+        button:disabled { 
+            background: var(--surface-hover); 
+            color: var(--text-muted);
+            cursor: not-allowed; 
+            box-shadow: none;
+            transform: none;
+        }
+        
+        .start-btn { display: block; width: 100%; padding: 1.25rem; font-size: 1.25rem; margin-top: 1.5rem; letter-spacing: 1px; text-transform: uppercase;}
+
+        .settings { display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 2.5rem; }
+        .setting-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .setting-group label { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        select { 
+            background: var(--bg); 
+            border: 1px solid var(--border); 
+            color: var(--text); 
+            padding: 1rem; 
+            border-radius: 8px; 
+            outline: none; 
+            font-size: 1rem; 
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23a1a1aa%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem top 50%;
+            background-size: 0.65rem auto;
+            cursor: pointer;
+        }
+        select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+
+        .header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 0.5rem; }
+        .stat-badge { background: var(--bg); padding: 0.75rem 1.25rem; border-radius: 8px; font-weight: 600; border: 1px solid var(--border); font-size: 1.1rem; }
+        .timer-box { color: var(--danger); font-variant-numeric: tabular-nums; }
+        .streak-box { color: var(--warning); }
+        .score-box { color: var(--success); }
+
+        .pace-container { width: 100%; height: 8px; background: var(--bg); border-radius: 4px; margin-bottom: 2rem; overflow: hidden; position: relative; border: 1px solid var(--border); }
+        .pace-bar { height: 100%; width: 100%; background: var(--success); transition: width 1s linear, background-color 0.5s; }
+        .pace-bar.warning { background: var(--warning); }
+        .pace-bar.danger { background: var(--danger); }
+
+        .question-box { font-size: 1.4rem; margin-bottom: 2rem; line-height: 1.6; min-height: 80px; font-weight: 500; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        
+        .option-btn { 
+            background: var(--surface-hover); 
+            border: 2px solid var(--border); 
+            color: var(--text); 
+            text-align: left; 
+            padding: 1.25rem; 
+            font-size: 1.15rem; 
+            border-radius: 10px;
+            box-shadow: none;
+            font-weight: 500;
+        }
+        
+        .option-btn:hover:not(:disabled) { 
+            background: var(--bg); 
+            border-color: var(--primary); 
+            transform: translateY(-2px);
+        }
+        
+        .option-btn.correct { 
+            background: rgba(16, 185, 129, 0.1); 
+            border-color: var(--success); 
+            color: var(--success);
+        }
+        
+        .option-btn.wrong { 
+            background: rgba(244, 63, 94, 0.1); 
+            border-color: var(--danger); 
+            color: var(--danger);
+        }
+
+        .concept-hint { color: var(--primary); font-size: 0.9rem; margin-bottom: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+
+        #ui-explanation-box { display: none; background: rgba(59, 130, 246, 0.05); border-left: 4px solid var(--primary); padding: 1.25rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem; font-size: 1.05rem; line-height: 1.6; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);}
+        
+        .summary-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+        .stat-card { background: var(--surface-hover); padding: 1.5rem 1rem; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
+        .stat-card .value { font-size: 2rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; }
+        .stat-card .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;}
+
+        .review-list { max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-right: 0.5rem; margin-bottom: 2rem; }
+        .review-list::-webkit-scrollbar { width: 8px; }
+        .review-list::-webkit-scrollbar-track { background: var(--bg); border-radius: 4px; }
+        .review-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        .review-list::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        
+        .review-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; border-left: 4px solid transparent; }
+        .review-item.correct { border-left-color: var(--success); }
+        .review-item.incorrect { border-left-color: var(--danger); }
+        .review-item.skipped { border-left-color: var(--text-muted); }
+        
+        .review-q { font-weight: 600; margin-bottom: 0.75rem; font-size: 1.15rem; }
+        .review-a { font-size: 1rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+        .review-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; background: var(--surface); padding: 0.75rem; border-radius: 6px; margin-top: 1rem; border: 1px solid var(--border);}
+        .speed-badge { padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 600;}
+        .speed-fast { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .speed-ok { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .speed-slow { background: rgba(244, 63, 94, 0.15); color: var(--danger); }
+        .explanation { margin-top: 0.5rem; font-size: 0.95rem; color: var(--text); border-top: 1px dashed var(--border); padding-top: 1rem; line-height: 1.5;}
+
+        @media (max-width: 600px) {
+            .options-grid, .summary-stats { grid-template-columns: 1fr 1fr; }
+            .container { padding: 1.5rem; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- START SCREEN -->
+        <div id="start-screen" class="active">
+            <h1>Time & Work Master <span style="color: var(--primary)">v5</span></h1>
+            <p class="subtitle">Procedurally generated infinite mathematics based on Kaushik Sir.</p>
+            
+            <div class="settings">
+                <div class="setting-group">
+                    <label>Learning Mode</label>
+                    <select id="quiz-mode">
+                        <option value="train" selected>Training (Instant Explanations & Adaptive)</option>
+                        <option value="exam">Exam Sprint (Strict 30s/Q Auto-Skip)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Duration</label>
+                    <select id="quiz-duration">
+                        <option value="180">3 Minutes (Sprint)</option>
+                        <option value="300" selected>5 Minutes (Standard Practice)</option>
+                        <option value="600">10 Minutes (Endurance)</option>
+                        <option value="999999">No Timer (Learn & Explore)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Topic Selection</label>
+                    <select id="quiz-concept">
+                        <option value="all" selected>🌟 ALL 10 TOPICS MIXED (Adaptive)</option>
+                        <option value="basic_lcm">1. Basic LCM Method (A and B together)</option>
+                        <option value="partial_work">2. Partial Work (Fractions of work in given days)</option>
+                        <option value="leaving_joining">3. Leaving & Joining (A leaves after X days)</option>
+                        <option value="efficiency_based">4. Efficiency Based (A is X% more efficient)</option>
+                        <option value="efficiency_time_diff">5. Efficiency & Time Difference (Takes X days less)</option>
+                        <option value="alternate_days">6. Alternate Days (A and B work alternately)</option>
+                        <option value="m1d1_basic">7. M1D1 = M2D2 (Basic Chain Rule)</option>
+                        <option value="men_women_boys">8. Men, Women, Boys (Efficiency Equating)</option>
+                        <option value="wages_distribution">9. Work and Wages (Money distribution by efficiency/work done)</option>
+                        <option value="root_ab_trick">10. A takes X more than A+B, B takes Y more -> Root(XY)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="start-btn" id="start-button" onclick="startQuiz()">Initialize Engine</button>
+        </div>
+
+        <!-- QUIZ SCREEN -->
+        <div id="quiz-screen">
+            <div class="header-info">
+                <div class="stat-badge score-box">Score: <span id="ui-score">0</span></div>
+                <div class="stat-badge streak-box">🔥 Streak: <span id="ui-streak">0</span></div>
+                <div class="stat-badge timer-box" id="ui-timer-container"><span id="ui-timer">05:00</span></div>
+            </div>
+            
+            <div class="pace-container">
+                <div class="pace-bar" id="ui-pace-bar"></div>
+            </div>
+
+            <div class="concept-hint" id="ui-concept-hint">Concept: Time & Work</div>
+            <div class="question-box" id="ui-question">Loading question...</div>
+            
+            <div class="options-grid" id="ui-options"></div>
+
+            <div id="ui-explanation-box">
+                <strong style="color: var(--primary);">Concept Breakdown:</strong><br>
+                <span id="ui-exp-text"></span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 1rem; gap: 1rem;">
+                <button id="skip-btn" onclick="skipQuestion()" style="background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); box-shadow: none;">Skip Question</button>
+                <button id="next-btn" onclick="nextQuestion()" disabled>Next Question ➔</button>
+            </div>
+        </div>
+
+        <!-- RESULT SCREEN -->
+        <div id="result-screen">
+            <h1>Session Complete</h1>
+            
+            <div class="summary-stats">
+                <div class="stat-card"><div class="value" id="res-score">0</div><div class="label">Correct</div></div>
+                <div class="stat-card"><div class="value" id="res-accuracy">0%</div><div class="label">Accuracy</div></div>
+                <div class="stat-card"><div class="value" id="res-speed">0s</div><div class="label">Avg Time</div></div>
+                <div class="stat-card"><div class="value" id="res-streak" style="color: var(--warning);">0</div><div class="label">Best Streak</div></div>
+            </div>
+
+            <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; color: var(--text-muted);">Weakest Concept: <span id="res-weakest" style="color: var(--danger);">None</span></h3>
+            
+            <div class="review-list" id="review-container"></div>
+
+            <button class="start-btn" onclick="resetApp()">Return to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CORE MATH HELPERS ---
+        function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        function gcd(a, b) { if (b === 0) return a; return gcd(b, a % b); }
+        function lcm(a, b) { return (a * b) / gcd(a, b); }
+
+        function shuffle(array) {
+            var cur = array.length, rndI;
+            while (cur > 0) {
+                rndI = Math.floor(Math.random() * cur); cur--;
+                var temp = array[cur]; array[cur] = array[rndI]; array[rndI] = temp;
+            }
+            return array;
+        }
+
+        function getUniqueOptions(opts) {
+            var unique = [];
+            for (var i = 0; i < opts.length; i++) {
+                if (unique.indexOf(opts[i]) === -1) unique.push(opts[i]);
+            }
+            return unique;
+        }
+
+        // --- 10 DYNAMIC GENERATORS based on Kaushik Sir's Time & Work video ---
+        var generators = {
+            
+            // 1. Basic LCM Method
+            'basic_lcm': function() {
+                var aDays = rnd(2, 6) * 5; // 10, 15, 20, 25, 30
+                var bDays = rnd(3, 8) * 5;
+                if(aDays === bDays) bDays += 5;
+                
+                var work = lcm(aDays, bDays);
+                var effA = work / aDays;
+                var effB = work / bDays;
+                var totalEff = effA + effB;
+                
+                var ans = work % totalEff === 0 ? (work / totalEff) : (work / totalEff).toFixed(2);
+                var ansStr = work % totalEff === 0 ? ans + " days" : ans + " days";
+
+                var q = `A can do a piece of work in ${aDays} days and B can do it in ${bDays} days. In how many days can A and B complete the work together?`;
+                var expText = `LCM Method: Let total work = LCM(${aDays}, ${bDays}) = ${work} units. Efficiency of A = ${work}/${aDays} = ${effA} units/day. Efficiency of B = ${work}/${bDays} = ${effB} units/day. Combined efficiency = ${effA} + ${effB} = ${totalEff} units/day. Time taken = Total Work / Efficiency = ${work} / ${totalEff} = ${ans} days.`;
+
+                var opts = [ansStr, (parseFloat(ans)+2).toFixed(2)+" days", Math.abs(parseFloat(ans)-2).toFixed(2)+" days", (parseFloat(ans)+5).toFixed(2)+" days"];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,5)).toFixed(2) + " days"); opts = getUniqueOptions(opts); }
+                
+                return { id: 'basic_lcm', type: 'Basic LCM', q: q, ans: ansStr, options: shuffle(opts), exp: expText };
+            },
+
+            // 2. Partial Work (Find full time, then LCM)
+            'partial_work': function() {
+                var denA = rnd(2, 5);
+                var numA = denA - 1; // e.g., 1/2, 2/3, 3/4
+                var daysA_partial = numA * rnd(2, 5); // ensures full days is an integer
+                var aFull = (daysA_partial * denA) / numA;
+
+                var denB = rnd(3, 6);
+                var numB = denB - 1; 
+                var daysB_partial = numB * rnd(2, 5);
+                var bFull = (daysB_partial * denB) / numB;
+
+                if(aFull === bFull) bFull += 5;
+                
+                var work = lcm(aFull, bFull);
+                var effA = work / aFull;
+                var effB = work / bFull;
+                var totalEff = effA + effB;
+                
+                var ansNum = work / totalEff;
+                var ans = Number.isInteger(ansNum) ? ansNum : ansNum.toFixed(2);
+                
+                var q = `A can do ${numA}/${denA} of a work in ${daysA_partial} days and B can do ${numB}/${denB} of the same work in ${daysB_partial} days. In how many days can they complete the whole work together?`;
+                var expText = `Find full time first: A takes ${daysA_partial} × (${denA}/${numA}) = ${aFull} days. B takes ${daysB_partial} × (${denB}/${numB}) = ${bFull} days. LCM(${aFull}, ${bFull}) = ${work} units. Eff A = ${effA}, Eff B = ${effB}. Together = ${work} / ${totalEff} = ${ans} days.`;
+
+                var opts = [ans, (parseFloat(ans)+2).toFixed(2), Math.abs(parseFloat(ans)-1).toFixed(2), (parseFloat(ans)+4).toFixed(2)];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,5)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'partial_work', type: 'Partial Work Fractions', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 3. Leaving & Joining
+            'leaving_joining': function() {
+                var aDays = rnd(3, 6) * 5; 
+                var bDays = rnd(4, 8) * 5;
+                if(aDays === bDays) bDays += 5;
+                
+                var work = lcm(aDays, bDays);
+                var effA = work / aDays;
+                var effB = work / bDays;
+                var totalEff = effA + effB;
+                
+                var daysWorkedTogether = rnd(2, 5);
+                var workDone = daysWorkedTogether * totalEff;
+                var remWork = work - workDone;
+                
+                var timeB_alone = remWork / effB;
+                var ans = Number.isInteger(timeB_alone) ? timeB_alone : timeB_alone.toFixed(2);
+                var totalTime = Number.isInteger(timeB_alone + daysWorkedTogether) ? (timeB_alone + daysWorkedTogether) : (timeB_alone + daysWorkedTogether).toFixed(2);
+
+                var q = `A and B can do a piece of work in ${aDays} days and ${bDays} days respectively. They started the work together but A left after ${daysWorkedTogether} days. In how many days will B complete the REMAINING work?`;
+                var expText = `LCM(${aDays}, ${bDays}) = ${work} units. Eff A = ${effA}, Eff B = ${effB}. Together they do ${totalEff} units/day. In ${daysWorkedTogether} days, they did ${daysWorkedTogether} × ${totalEff} = ${workDone} units. Remaining = ${work} - ${workDone} = ${remWork} units. B completes it in ${remWork} / ${effB} = ${ans} days.`;
+
+                var opts = [ans, totalTime, (parseFloat(ans)+2).toFixed(2), Math.abs(parseFloat(ans)-2).toFixed(2)];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,5)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'leaving_joining', type: 'Leaving Work', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 4. Efficiency Based
+            'efficiency_based': function() {
+                var aDays = rnd(10, 30);
+                var morePerc = rnd(1, 4) * 25; // 25%, 50%, 75%, 100%
+                var bEffMultiplier = (100 + morePerc) / 100;
+                
+                // If A takes aDays, B's efficiency is higher, so B takes less time
+                var bDays = aDays / bEffMultiplier;
+                var ans = Number.isInteger(bDays) ? bDays : bDays.toFixed(2);
+
+                var q = `A can finish a work in ${aDays} days. B is ${morePerc}% more efficient than A. In how many days can B alone finish the same work?`;
+                var expText = `Efficiency of B = ${(100+morePerc)}% of A. Efficiency ratio A:B = 100:${100+morePerc}. Time is inversely proportional to efficiency, so Time ratio A:B = ${100+morePerc}:100. If A takes ${aDays} days, B takes ${aDays} × (100/${100+morePerc}) = ${ans} days.`;
+
+                var opts = [ans, (parseFloat(ans)*2).toFixed(2), (parseFloat(ans)+5).toFixed(2), (parseFloat(ans)-2).toFixed(2)];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,5)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'efficiency_based', type: 'Efficiency Ratio', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 5. Efficiency & Time Difference
+            'efficiency_time_diff': function() {
+                var mult = rnd(2, 4); // B is 2,3,4 times as efficient as A
+                // Eff ratio A:B = 1:mult
+                // Time ratio A:B = mult:1
+                // Diff in parts = mult - 1
+                var diffParts = mult - 1;
+                var onePart = rnd(10, 20); // 10, 11, 12... days
+                var diffDays = diffParts * onePart;
+                
+                var aTime = mult * onePart;
+                var bTime = 1 * onePart;
+                
+                // Together = (aTime * bTime) / (aTime + bTime)
+                var tog = (aTime * bTime) / (aTime + bTime);
+                var ans = Number.isInteger(tog) ? tog : tog.toFixed(2);
+
+                var q = `A is ${mult} times as efficient as B and is therefore able to finish a job in ${diffDays} days less than B. Working together, they can do it in:`;
+                var expText = `Efficiency A:B = ${mult}:1. Time A:B = 1:${mult}. Difference is ${mult-1} parts. ${mult-1} parts = ${diffDays} days -> 1 part = ${onePart} days. So A takes ${bTime} days, B takes ${aTime} days. Together = (${aTime} × ${bTime}) / (${aTime} + ${bTime}) = ${ans} days.`;
+
+                var opts = [ans, aTime, bTime, (parseFloat(ans)+2).toFixed(2)];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,5)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'efficiency_time_diff', type: 'Efficiency Time Difference', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 6. Alternate Days
+            'alternate_days': function() {
+                // Ensure a and b don't result in infinite loops, pick clean numbers
+                var aDays = rnd(2, 5) * 5; // 10, 15, 20, 25
+                var bDays = rnd(3, 6) * 5;
+                if(aDays === bDays) bDays += 5;
+                
+                var work = lcm(aDays, bDays);
+                var effA = work / aDays;
+                var effB = work / bDays;
+                var cycleWork = effA + effB; // 2 days
+                
+                var cycles = Math.floor(work / cycleWork);
+                var remWork = work - (cycles * cycleWork);
+                var days = cycles * 2;
+                
+                // A starts
+                if (remWork > 0) {
+                    if (remWork <= effA) {
+                        days += remWork / effA;
+                    } else {
+                        days += 1;
+                        remWork -= effA;
+                        days += remWork / effB;
+                    }
+                }
+                
+                var ans = Number.isInteger(days) ? days : days.toFixed(2);
+
+                var q = `A can do a piece of work in ${aDays} days and B in ${bDays} days. If they work on alternate days starting with A, in how many days will the work be completed?`;
+                var expText = `LCM(${aDays}, ${bDays}) = ${work}. Eff A = ${effA}, Eff B = ${effB}. Cycle of 2 days (A then B) = ${cycleWork} units. ${cycles} cycles = ${cycles*2} days = ${cycles*cycleWork} units. Remaining = ${work - cycles*cycleWork} units. A takes it next. Total days = ${ans}.`;
+
+                var opts = [ans, (parseFloat(ans)+1).toFixed(2), (parseFloat(ans)-1).toFixed(2), (work/(effA+effB)).toFixed(2)]; // Trap is working together
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,3)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'alternate_days', type: 'Alternate Days', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 7. M1D1 = M2D2 (Basic Chain Rule)
+            'm1d1_basic': function() {
+                var m1 = rnd(10, 30);
+                var d1 = rnd(15, 40);
+                var m2 = rnd(10, 25);
+                if (m1 === m2) m2 += 5;
+                
+                var d2 = (m1 * d1) / m2;
+                var ans = Number.isInteger(d2) ? d2 : d2.toFixed(2);
+
+                var q = `If ${m1} men can do a piece of work in ${d1} days, in how many days will ${m2} men do the SAME work?`;
+                var expText = `M1 × D1 = M2 × D2. Total work = ${m1} × ${d1} = ${m1*d1}. So, D2 = ${m1*d1} / ${m2} = ${ans} days.`;
+
+                var opts = [ans, (m1*m2/d1).toFixed(2), (d1*m2/m1).toFixed(2), (parseFloat(ans)+5).toFixed(2)];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(2,6)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'm1d1_basic', type: 'M1D1 = M2D2', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 8. Men, Women, Boys Equating
+            'men_women_boys': function() {
+                var m = rnd(2, 6);
+                var w = rnd(3, 8);
+                if(m===w) w++;
+                var days = rnd(10, 30);
+                
+                // m Men OR w Women can do it in days
+                // 1 M = w/m Women
+                var reqM = rnd(2, 5);
+                var reqW = rnd(2, 5);
+                
+                // Convert to men: reqM + reqW*(m/w) Men
+                var effReq = reqM + reqW * (m/w);
+                var d2 = (m * days) / effReq;
+                var ans = Number.isInteger(d2) ? d2 : d2.toFixed(2);
+
+                var q = `If ${m} men OR ${w} women can do a piece of work in ${days} days, in how many days can ${reqM} men AND ${reqW} women do the same work?`;
+                var expText = `Equate efficiency: ${m} Men = ${w} Women. So 1 Woman = ${m/w} Men. Required group = ${reqM} M + ${reqW} W = ${reqM} M + ${reqW * (m/w)} M = ${effReq} Men. Using M1D1 = M2D2: ${m} × ${days} = ${effReq} × D2. D2 = ${ans} days.`;
+
+                var opts = [ans, (parseFloat(ans)+2).toFixed(2), (parseFloat(ans)*2).toFixed(2), Math.abs(parseFloat(ans)-5).toFixed(2)];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push((parseFloat(ans) + rnd(1,5)).toFixed(2)); opts = getUniqueOptions(opts); }
+
+                return { id: 'men_women_boys', type: 'OR/AND Concept', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 9. Work and Wages
+            'wages_distribution': function() {
+                var aDays = rnd(2, 6) * 5; 
+                var bDays = rnd(3, 8) * 5;
+                if(aDays === bDays) bDays += 5;
+                
+                var work = lcm(aDays, bDays);
+                var effA = work / aDays;
+                var effB = work / bDays;
+                
+                var totalWages = (effA + effB) * rnd(1, 5) * 1000;
+                var ans = (effA / (effA + effB)) * totalWages;
+
+                var q = `A can do a work in ${aDays} days and B can do it in ${bDays} days. They undertook to do it together for ₹${totalWages}. Find the share of A.`;
+                var expText = `Wages are distributed in the ratio of efficiencies (work done). Efficiency A = 1/${aDays}, B = 1/${bDays}. Ratio A:B = ${bDays}:${aDays} = ${effA}:${effB}. A's share = (${effA} / ${effA+effB}) × ${totalWages} = ₹${ans}.`;
+
+                var opts = [ans, totalWages - ans, ans + 500, ans - 500];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push(opts[0] + rnd(1,3)*500); opts = getUniqueOptions(opts); }
+
+                return { id: 'wages_distribution', type: 'Work & Wages', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            },
+
+            // 10. Root AB Trick (Kaushik Sir's special)
+            'root_ab_trick': function() {
+                // To get an integer root, we need a*b to be a perfect square
+                var roots = [4, 5, 6, 8, 9, 10, 12];
+                var t = roots[rnd(0, roots.length-1)];
+                var targetSquare = t * t;
+                
+                // Find factors
+                var factors = [];
+                for(var i=1; i<=Math.floor(Math.sqrt(targetSquare)); i++) {
+                    if(targetSquare % i === 0 && i !== targetSquare/i) {
+                        factors.push([i, targetSquare/i]);
+                    }
+                }
+                var pair = factors.length > 0 ? factors[rnd(0, factors.length-1)] : [1, targetSquare];
+                var aMore = pair[0], bMore = pair[1];
+                
+                var ans = t; // Together time
+
+                var q = `Working alone, A takes ${aMore} hours more than A and B together. B working alone takes ${bMore} hours more than A and B together. How long will they take to complete the work working together?`;
+                var expText = `Direct Formula Trick: If A takes 'a' more and B takes 'b' more than (A+B), then Time for (A+B) = √(a × b). Here, t = √(${aMore} × ${bMore}) = √${targetSquare} = ${ans} hours.`;
+
+                var opts = [ans, ans+aMore, ans+bMore, aMore*bMore];
+                opts = getUniqueOptions(opts);
+                while(opts.length < 4) { opts.push(opts[0] + rnd(1,5)); opts = getUniqueOptions(opts); }
+
+                return { id: 'root_ab_trick', type: 'Root(ab) Trick', q: q, ans: ans.toString(), options: shuffle(opts.map(String)), exp: expText };
+            }
+        };
+
+        // --- APP STATE ---
+        var state = {
+            mode: 'train', timeRemaining: 300, timerId: null,
+            questionsAttempted: 0, correctAnswers: 0, streak: 0, maxStreak: 0,
+            history: [], currentQ: null, qStartTime: 0, paceTime: 30, focus: 'all',
+            weights: {}, errorCounts: {}, isTransitioning: false
+        };
+
+        function startQuiz() {
+            try {
+                state.mode = document.getElementById('quiz-mode').value;
+                var dur = parseInt(document.getElementById('quiz-duration').value);
+                state.timeRemaining = dur;
+                state.paceTime = 30; // Strict 30s
+                state.isTransitioning = false;
+                
+                document.getElementById('ui-timer-container').style.display = (dur === 999999) ? 'none' : 'block';
+                
+                state.focus = document.getElementById('quiz-concept').value;
+                state.questionsAttempted = 0; correctAnswers = 0; state.streak = 0; state.maxStreak = 0;
+                state.history = [];
+                
+                state.weights = {}; state.errorCounts = {};
+                var genKeys = Object.keys(generators);
+                for(var i=0; i<genKeys.length; i++) {
+                    var k = genKeys[i];
+                    if (state.focus === 'all' || state.focus === k) {
+                        state.weights[k] = 1; 
+                        state.errorCounts[k] = 0;
+                    }
+                }
+                
+                document.getElementById('start-screen').classList.remove('active');
+                document.getElementById('quiz-screen').classList.add('active');
+                
+                if(dur !== 999999) {
+                    state.timerId = setInterval(tick, 1000);
+                }
+                generateNextQuestion();
+            } catch (e) {
+                alert("Error starting test: " + e.message);
+                console.error(e);
+            }
+        }
+
+        function tick() {
+            state.timeRemaining--;
+            updateUITimer();
+            
+            var elapsed = (performance.now() - state.qStartTime) / 1000;
+            var pacePct = Math.max(0, 100 - (elapsed / state.paceTime) * 100);
+            var bar = document.getElementById('ui-pace-bar');
+            bar.style.width = pacePct + '%';
+            
+            if (pacePct < 30) { bar.className = 'pace-bar danger'; }
+            else if (pacePct < 60) { bar.className = 'pace-bar warning'; }
+            else { bar.className = 'pace-bar'; }
+
+            // STRICT 30s TIMEOUT
+            if (state.mode === 'exam' && pacePct <= 0 && !state.isTransitioning) {
+                timeOutQuestion();
+            }
+
+            if (state.timeRemaining <= 0) endQuiz();
+        }
+
+        function updateUITimer() {
+            var m = Math.floor(state.timeRemaining / 60);
+            var s = state.timeRemaining % 60;
+            var minStr = m < 10 ? '0' + m : m;
+            var secStr = s < 10 ? '0' + s : s;
+            document.getElementById('ui-timer').innerText = minStr + ":" + secStr;
+            document.getElementById('ui-streak').innerText = state.streak;
+            document.getElementById('ui-score').innerText = state.correctAnswers;
+        }
+
+        function getWeightedRandomConcept() {
+            var genKeys = Object.keys(state.weights);
+            var totalWeight = 0;
+            for(var i=0; i<genKeys.length; i++) totalWeight += state.weights[genKeys[i]];
+            
+            var random = Math.random() * totalWeight;
+            for(var j=0; j<genKeys.length; j++) {
+                var concept = genKeys[j];
+                random -= state.weights[concept];
+                if (random <= 0) return concept;
+            }
+            return genKeys[0];
+        }
+
+        function generateNextQuestion() {
+            state.isTransitioning = false;
+            document.getElementById('ui-explanation-box').style.display = 'none';
+            document.getElementById('skip-btn').disabled = false;
+            document.getElementById('next-btn').disabled = true;
+            document.getElementById('ui-pace-bar').style.width = '100%';
+            
+            if(document.getElementById('quiz-duration').value == 999999) {
+                requestAnimationFrame(updatePaceBarLoop);
+            }
+
+            var concept = getWeightedRandomConcept();
+            state.currentQ = generators[concept]();
+            state.qStartTime = performance.now();
+
+            document.getElementById('ui-concept-hint').innerText = "Concept: " + state.currentQ.type;
+            document.getElementById('ui-question').innerText = state.currentQ.q;
+            
+            var optsContainer = document.getElementById('ui-options');
+            optsContainer.innerHTML = '';
+            
+            for(var i=0; i<state.currentQ.options.length; i++) {
+                (function(opt) {
+                    var btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = opt;
+                    btn.onclick = function() { selectOption(opt, btn); };
+                    optsContainer.appendChild(btn);
+                })(state.currentQ.options[i]);
+            }
+        }
+        
+        function updatePaceBarLoop() {
+            if(document.getElementById('quiz-screen').classList.contains('active') && document.getElementById('quiz-duration').value == 999999) {
+                var elapsed = (performance.now() - state.qStartTime) / 1000;
+                var pacePct = Math.max(0, 100 - (elapsed / state.paceTime) * 100);
+                var bar = document.getElementById('ui-pace-bar');
+                bar.style.width = pacePct + '%';
+                if (pacePct < 30) bar.className = 'pace-bar danger'; 
+                else if (pacePct < 60) bar.className = 'pace-bar warning'; 
+                else bar.className = 'pace-bar';
+                requestAnimationFrame(updatePaceBarLoop);
+            }
+        }
+
+        function selectOption(selectedOpt, btnElement) {
+            state.isTransitioning = true;
+            var timeTaken = Math.round(performance.now() - state.qStartTime);
+            var isCorrect = (selectedOpt == state.currentQ.ans);
+            
+            var buttons = document.querySelectorAll('.option-btn');
+            for(var i=0; i<buttons.length; i++) {
+                var b = buttons[i];
+                b.disabled = true;
+                if (b.innerText == state.currentQ.ans) b.classList.add('correct');
+                else if (b === btnElement && !isCorrect) b.classList.add('wrong');
+            }
+
+            state.questionsAttempted++;
+            document.getElementById('skip-btn').disabled = true;
+            document.getElementById('next-btn').disabled = false;
+
+            if (isCorrect) {
+                state.correctAnswers++;
+                state.streak++;
+                state.maxStreak = Math.max(state.maxStreak, state.streak);
+                state.weights[state.currentQ.id] = Math.max(0.5, state.weights[state.currentQ.id] - 0.2);
+            } else {
+                state.streak = 0;
+                state.weights[state.currentQ.id] += 1.5;
+                state.errorCounts[state.currentQ.id]++;
+                
+                if (state.mode === 'train') {
+                    document.getElementById('ui-explanation-box').style.display = 'block';
+                    document.getElementById('ui-exp-text').innerText = state.currentQ.exp;
+                }
+            }
+            
+            updateUITimer();
+            
+            var histItem = {
+                id: state.currentQ.id, type: state.currentQ.type, q: state.currentQ.q,
+                ans: state.currentQ.ans, exp: state.currentQ.exp,
+                userAns: selectedOpt, timeTakenMs: timeTaken, isCorrect: isCorrect, skipped: false
+            };
+            state.history.push(histItem);
+            
+            if (state.mode === 'exam') { setTimeout(generateNextQuestion, 800); }
+        }
+
+        function skipQuestion() {
+            state.isTransitioning = true;
+            var timeTaken = Math.round(performance.now() - state.qStartTime);
+            state.questionsAttempted++; 
+            state.streak = 0;
+            state.weights[state.currentQ.id] += 1.0; 
+            state.errorCounts[state.currentQ.id]++;
+            
+            var histItem = {
+                id: state.currentQ.id, type: state.currentQ.type, q: state.currentQ.q,
+                ans: state.currentQ.ans, exp: state.currentQ.exp,
+                userAns: "Skipped ⏭", timeTakenMs: timeTaken, isCorrect: false, skipped: true
+            };
+            state.history.push(histItem);
+            
+            updateUITimer();
+            generateNextQuestion();
+        }
+
+        function timeOutQuestion() {
+            state.isTransitioning = true;
+            var timeTaken = Math.round(performance.now() - state.qStartTime);
+            state.questionsAttempted++; 
+            state.streak = 0;
+            state.weights[state.currentQ.id] += 1.0; 
+            state.errorCounts[state.currentQ.id]++;
+            
+            var histItem = {
+                id: state.currentQ.id, type: state.currentQ.type, q: state.currentQ.q,
+                ans: state.currentQ.ans, exp: state.currentQ.exp,
+                userAns: "Time Out ⏱️", timeTakenMs: timeTaken, isCorrect: false, skipped: true
+            };
+            state.history.push(histItem);
+            
+            updateUITimer();
+            generateNextQuestion();
+        }
+
+        function nextQuestion() { generateNextQuestion(); }
+
+        function endQuiz() {
+            clearInterval(state.timerId);
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('result-screen').classList.add('active');
+            renderResults();
+        }
+
+        function renderResults() {
+            document.getElementById('res-score').innerText = state.correctAnswers + "/" + state.questionsAttempted;
+            var acc = state.questionsAttempted > 0 ? Math.round((state.correctAnswers / state.questionsAttempted) * 100) : 0;
+            document.getElementById('res-accuracy').innerText = acc + "%";
+            document.getElementById('res-streak').innerText = state.maxStreak;
+            
+            var totalMs = 0;
+            for(var i=0; i<state.history.length; i++) totalMs += state.history[i].timeTakenMs;
+            var avgS = state.questionsAttempted > 0 ? (totalMs / state.questionsAttempted / 1000).toFixed(1) : 0;
+            document.getElementById('res-speed').innerText = avgS + "s";
+
+            var weakest = "None", maxErr = 0;
+            var eKeys = Object.keys(state.errorCounts);
+            for (var j=0; j<eKeys.length; j++) {
+                var key = eKeys[j];
+                if (state.errorCounts[key] > maxErr) {
+                    maxErr = state.errorCounts[key];
+                    weakest = key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ');
+                }
+            }
+            document.getElementById('res-weakest').innerText = weakest + (maxErr > 0 ? " (" + maxErr + " errors)" : " - Perfect!");
+
+            var list = document.getElementById('review-container');
+            list.innerHTML = '';
+            
+            if (state.history.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:var(--text-muted);">No questions attempted.</p>';
+                return;
+            }
+
+            for(var k=0; k<state.history.length; k++) {
+                var item = state.history[k];
+                var div = document.createElement('div');
+                div.className = "review-item " + (item.skipped ? 'skipped' : (item.isCorrect ? 'correct' : 'incorrect'));
+                
+                var s = item.timeTakenMs / 1000;
+                var speedClass = 'speed-ok', speedText = 'Avg Pace';
+                if (s < 15) { speedClass = 'speed-fast'; speedText = 'Lightning Fast ⚡'; }
+                else if (s > 30) { speedClass = 'speed-slow'; speedText = 'Needs Practice 🐢'; }
+
+                var ansHtml = "Your Answer: <span style='color: " + (item.skipped ? 'var(--text-muted)' : (item.isCorrect ? 'var(--success)' : 'var(--danger)')) + "'>" + item.userAns + "</span>";
+                if (!item.isCorrect || item.skipped) {
+                    ansHtml += " | Correct Answer: <span style='color: var(--success)'>" + item.ans + "</span>";
+                }
+
+                div.innerHTML = "<div class='review-q'>Q" + (k + 1) + ": " + item.q + "</div>" +
+                                "<div class='review-a'>" + ansHtml + "</div>" +
+                                "<div class='explanation'>" + item.exp + "</div>" +
+                                "<div class='review-meta'>" +
+                                "<span>Concept: " + item.type + "</span>" +
+                                "<span><span class='speed-badge " + speedClass + "'>" + speedText + "</span> Time: " + s.toFixed(1) + "s</span>" +
+                                "</div>";
+                list.appendChild(div);
+            }
+        }
+
+        function resetApp() {
+            if(state.timerId) clearInterval(state.timerId);
+            document.getElementById('result-screen').classList.remove('active');
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('start-screen').classList.add('active');
+        }
+    </script>
+</body>
+</html>
